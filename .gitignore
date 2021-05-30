@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Solution
+*.sln
+
+# Folders
+Debug/

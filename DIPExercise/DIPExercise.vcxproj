@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{fac722c0-d05e-48e3-8d06-f9273ba20b3d}</ProjectGuid>
+    <ProjectGuid>{a276509e-cfdd-449e-9460-595e10ce5ada}</ProjectGuid>
     <RootNamespace>DIPExercise</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>

@@ -18,22 +18,27 @@ BYTE* output;
 BYTE** input2D;
 BYTE** output2D;
 
+size_t orgWidth;
+size_t orgHeight;
+size_t width;
+size_t height;
+
 bool ReadBMP(const char* filePath);
 bool WriteBMP(const char* filePath, BYTE* data);
 
-void ZoomOut(unsigned int n);
+void ZoomIn(unsigned int n);
 
-BYTE** MapInto2DArray(BYTE* pixelData);
-BYTE* Serialize(BYTE** data2D);
+BYTE** MapInto2DArray(BYTE* pixelData, size_t width, size_t height);
+BYTE* Serialize(BYTE** data2D, size_t width, size_t height);
 
 void FreeMemory();
 
 int main() {
 	ReadBMP("lena.bmp");
 	
-	ZoomOut(2);
-	
-	WriteBMP("test.bmp", output);
+	ZoomIn(2);
+
+	WriteBMP("output_2.bmp", output);
 
 	FreeMemory();
 }
@@ -48,6 +53,8 @@ bool ReadBMP(const char* filePath) {
 		fread(bmp.colorTableRGB, sizeof(RGBQUAD), 256, fp);
 		
 		size_t imageSize = bmp.infoHeader.biSizeImage;
+		orgWidth = bmp.infoHeader.biWidth;
+		orgHeight = bmp.infoHeader.biHeight;
 		input = new BYTE[imageSize];
 		fread(input, sizeof(BYTE), imageSize, fp);
 		
@@ -78,10 +85,8 @@ bool WriteBMP(const char* filePath, BYTE* data) {
 	return true;
 }
 
-BYTE** MapInto2DArray(BYTE* pixelData) {
-	size_t width = (size_t)abs(bmp.infoHeader.biWidth);
-	size_t height = (size_t)abs(bmp.infoHeader.biHeight);
-	size_t imageSize = bmp.infoHeader.biSizeImage;
+BYTE** MapInto2DArray(BYTE* pixelData, size_t width, size_t height) {
+	size_t imageSize = width * height;
 
 	BYTE** image2D = new BYTE * [height];
 	for (size_t i = 0; i < height; i++) {
@@ -97,10 +102,8 @@ BYTE** MapInto2DArray(BYTE* pixelData) {
 	return image2D;
 }
 
-BYTE* Serialize(BYTE** image2D) {
-	size_t width = (size_t)abs(bmp.infoHeader.biWidth);
-	size_t height = (size_t)abs(bmp.infoHeader.biHeight);
-	size_t imageSize = bmp.infoHeader.biSizeImage;
+BYTE* Serialize(BYTE** image2D, size_t width, size_t height) {
+	size_t imageSize = width * height;
 
 	BYTE* serialized = new BYTE[imageSize];
 	memset(serialized, 0, imageSize);
@@ -113,38 +116,42 @@ BYTE* Serialize(BYTE** image2D) {
 	return serialized;
 }
 
-void ZoomOut(unsigned int n) {
-	size_t width = (size_t)abs(bmp.infoHeader.biWidth);
-	size_t height = (size_t)abs(bmp.infoHeader.biHeight);
+void ZoomIn(unsigned int nx) {
+	if (nx <= 0) return;
 
-	input2D = MapInto2DArray(input);
-	
-	output2D = new BYTE * [height];
+	input2D = MapInto2DArray(input, orgWidth, orgHeight);
+
+	width = orgWidth * nx;
+	height = orgHeight * nx;
+
+	output2D = new BYTE* [height];
 	for (size_t i = 0; i < height; i++) {
 		output2D[i] = new BYTE[width];
 		memset(output2D[i], 0, width);
 	}
 
-	for (size_t i = 0; i < height; i += n) {
-		for (size_t j = 0; j < width; j += n) {
-			size_t y = i / n;
-			size_t x = j / n;
-			output2D[y][x] = input2D[i][j];
+	for (size_t i = 0; i < orgHeight; i++) {
+		for (size_t j = 0; j < orgWidth; j++) {
+			for (size_t k = i * nx; k < (i + 1) * nx; k++) {
+				for (size_t w = j * nx; w < (j + 1) * nx; w++) {
+					output2D[k][w] = input2D[i][j];
+				}
+			}
 		}
 	}
 
-	output = Serialize(output2D);
-}
-
-void ApplyFilter() {
+	output = Serialize(output2D, width, height);
+	
+	bmp.infoHeader.biWidth = width;
+	bmp.infoHeader.biHeight = height;
+	bmp.infoHeader.biSizeImage = width * height;
 }
 
 void FreeMemory() {
 	delete[] input;
 	delete[] output;
 	
-	size_t height = (size_t)abs(bmp.infoHeader.biHeight);
-	for (size_t i = 0; i < height; i++) {
+	for (size_t i = 0; i < orgHeight; i++) {
 		delete[] input2D[i];
 	}
 	delete[] input2D;
